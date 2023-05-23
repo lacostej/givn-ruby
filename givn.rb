@@ -1,15 +1,21 @@
 require_relative 'lib/givn/website'
 
 def dump_orders_codes(outlet, from, to)
-  venue_slug = JSON.parse(File.read(".env.#{outlet}.json"))['slug']
+  venue_slug = 
+JSON.parse(File.read(".env.#{outlet}.json"))['slug']
+  orders = website_client.orders(venue_slug).select{|order| order[:timestamp] >= from and order[:timestamp] < to}
+  codes = website_client.used_codes(venue_slug).select{|code| code[:timestamp] >= from and code[:timestamp] < to}
+
   puts "ORDERS from #{from} to #{to}"
-  website_client.orders(venue_slug).select{|order| order[:timestamp] >= from and order[:timestamp] < to}.each do |order|
+  orders.each do |order|
     puts "#{order[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{order[:price]}\n\t#{order[:description1]}\n\t#{order[:description2]}"
   end
+  puts "TOTAL:\t #{orders.map{|i| i[:price]}.sum}"
   puts "CODES from #{from} to #{to}"
-  website_client.used_codes(venue_slug).select{|code| code[:timestamp] >= from and code[:timestamp] < to}.each do |code|
+  codes.each do |code|
     puts "#{code[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{code[:price]}\n\t#{code[:description1]}\n\t#{code[:description2]}"
   end
+  puts "TOTAL:\t #{codes.map{|i| i[:price]}.sum}"
 end
 
 def website_client
@@ -41,6 +47,7 @@ when "today"
   from_date = transaction_day
   to_date = transaction_day + 1
 
+  puts "Searching Givn for #{transaction_day} for #{outlet}"
   dump_orders_codes(outlet, from_date, to_date)
 
 when /^[0-9][0-9][0-9][0-9]-[0-9][0-9](_[0-9][0-9][0-9][0-9]-[0-9][0-9])?$/
