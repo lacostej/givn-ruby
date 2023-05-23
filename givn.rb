@@ -1,4 +1,5 @@
 require_relative 'lib/givn/website'
+require 'colorize'
 
 def dump_orders_codes(outlet, from, to)
   venue_slug = 
@@ -10,12 +11,12 @@ JSON.parse(File.read(".env.#{outlet}.json"))['slug']
   orders.each do |order|
     puts "#{order[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{order[:price]}\n\t#{order[:description1]}\n\t#{order[:description2]}"
   end
-  puts "TOTAL:\t #{orders.map{|i| i[:price]}.sum}"
+  puts "TOTAL:\t #{orders.map{|i| i[:price]}.sum} kr"
   puts "CODES from #{from} to #{to}"
   codes.each do |code|
     puts "#{code[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{code[:price]}\n\t#{code[:description1]}\n\t#{code[:description2]}"
   end
-  puts "TOTAL:\t #{codes.map{|i| i[:price]}.sum}"
+  puts "TOTAL:\t #{codes.map{|i| i[:price]}.sum.to_s.green}"
 end
 
 def website_client

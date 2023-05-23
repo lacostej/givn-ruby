@@ -98,11 +98,16 @@ module Givn
 
       doc = Oga.parse_html(response.body)
 
-      data = doc.xpath("//main//a")
+      # skip header
+      data =  doc.xpath("//main/div/div/div/div | //main/div/div/div/a")
+
+      # skip non data lines
+      data = data.select { |i| i.xpath("div").count > 0 }
 
       data.map do |code_data|
+        # data[0].xpath("div").count
         # "/admin/bonitacafe/orders/b432d1b7-0d93-4274-8985-eca3f0fc9b54"
-        url = code_data.attribute("href").value
+        url = code_data.name == "a" ? code_data.attribute("href").value : nil
         # 16. May 2023
         date = code_data.xpath("div")[0].xpath("div")[0].text
         time = code_data.xpath("div")[0].xpath("div")[1].text
