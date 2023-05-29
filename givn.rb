@@ -50,7 +50,14 @@ when "today"
 
   puts "Searching Givn for #{transaction_day} for #{outlet}"
   dump_orders_codes(outlet, from_date, to_date)
+when /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
+  transaction_day = Date.strptime(ARGV[1],"%Y-%m-%d")
 
+  from_date = transaction_day
+  to_date = transaction_day + 1
+
+  puts "Searching Givn for #{transaction_day} for #{outlet}"
+  dump_orders_codes(outlet, from_date, to_date)
 when /^[0-9][0-9][0-9][0-9]-[0-9][0-9](_[0-9][0-9][0-9][0-9]-[0-9][0-9])?$/
   first_last_month = ARGV[0].split("_")
   transaction_month = Date.strptime(first_last_month[0],"%Y-%m")
