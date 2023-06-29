@@ -4,6 +4,7 @@ require 'json'
 require 'fileutils'
 require 'oga'
 require 'date'
+require_relative 'string'
 
 module Givn
   class Website
@@ -72,7 +73,7 @@ module Givn
         time = order_data.xpath("div")[0].xpath("div")[0].xpath("div")[1].text
         description1 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[0].text.strip
         description2 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[1].text.strip
-        price = order_data.xpath("div")[0].xpath("div")[2].xpath("div")[0].text.strip.gsub(/NOK[[:space:]]/, "").to_f
+        price = order_data.xpath("div")[0].xpath("div")[2].xpath("div")[0].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
         { 
           date: date,
           time: time,
@@ -115,7 +116,7 @@ module Givn
         description1 = code_data.xpath("div")[1].xpath("div")[0].text.strip
         # returns "oppvakt-flyndre-134a Y7KJ" 
         description2 = code_data.xpath("div")[1].xpath("div")[1].text.strip.gsub("\n", "").gsub(/ +/, " ")
-        price = code_data.xpath("div")[2].text.strip.gsub(/NOK[[:space:]]/, "").to_f
+        price = code_data.xpath("div")[2].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
         { 
           date: date,
           time: time,
