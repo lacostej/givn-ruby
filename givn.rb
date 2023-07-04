@@ -11,12 +11,44 @@ JSON.parse(File.read(".env.#{outlet}.json"))['slug']
   orders.each do |order|
     puts "#{order[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{order[:price]}\n\t#{order[:description1]}\n\t#{order[:description2]}"
   end
-  puts "TOTAL:\t #{orders.map{|i| i[:price]}.sum} kr"
+  total_transactions_sum = orders.map{|i| i[:price]}.sum
+  puts "TOTAL:\t #{total_transactions_sum} kr"
   puts "CODES from #{from} to #{to}"
   codes.each do |code|
     puts "#{code[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{code[:price]}\n\t#{code[:description1]}\n\t#{code[:description2]}"
   end
   puts "TOTAL:\t #{codes.map{|i| i[:price]}.sum.to_s.green}"
+
+  update_closing_data_file do |odata|
+    # puts "Updating #{data.to_json} with #{data.to_json}"
+    d = {
+      'full_total': total_transactions_sum,
+      'transactions': orders.count
+    }
+    odata['givn'] = d
+   end
+
+end
+
+def update_closing_data_file
+  closing_data_file = ENV["CLOSING_DATA_FILE"]
+  unless closing_data_file
+    puts "\nNo CLOSING_DATA_FILE"
+    return
+  end
+
+  require 'json'
+  data = begin
+    JSON.parse(File.read(closing_data_file))
+  rescue => e
+    {}
+  end
+
+  yield(data) if block_given?
+
+  File.open(closing_data_file, "w:UTF-8") do |f|
+    f.write(data.to_json)
+  end
 end
 
 def website_client
