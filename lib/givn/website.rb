@@ -50,83 +50,113 @@ module Givn
       nil
     end
 
-    def orders(slug)
-      uri = "/admin/#{slug}/orders"
-      response = self.class.get(uri, headers: {
-        'Connection' => 'keep-alive',
-        'Accept' => '*/*',
-        'Accept-Language' => 'en-US,en;q=0.5',
-        'Cookie' => to_cookie_string(uri),
-        'User-Agent' => ua
-      })
-      parse_cookie(response)
+    def orders(slug, page = 1)
+      result = []
+      loop do
+        # puts "Loading page #{page}"
+        uri = "/admin/#{slug}/orders?page=#{page}"
 
-      doc = Oga.parse_html(response.body)
+        response = self.class.get(uri, headers: {
+          'Connection' => 'keep-alive',
+          'Accept' => '*/*',
+          'Accept-Language' => 'en-US,en;q=0.5',
+          'Cookie' => to_cookie_string(uri),
+          'User-Agent' => ua
+        })
+        parse_cookie(response)
 
-      data = doc.xpath("//main//a")
+        doc = Oga.parse_html(response.body)
 
-      data.map do |order_data|
-        # "/admin/bonitacafe/orders/b432d1b7-0d93-4274-8985-eca3f0fc9b54"
-        url = order_data.attribute("href").value
-        # 16. May 2023
-        date = order_data.xpath("div")[0].xpath("div")[0].xpath("div")[0].text
-        time = order_data.xpath("div")[0].xpath("div")[0].xpath("div")[1].text
-        description1 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[0].text.strip
-        description2 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[1].text.strip
-        price = order_data.xpath("div")[0].xpath("div")[2].xpath("div")[0].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
-        { 
-          date: date,
-          time: time,
-          timestamp: DateTime.parse("#{date} #{time}"),
-          description1: description1,
-          description2: description2,
-          price: price
-        }
+        #puts response.body
+
+        data = doc.xpath("//main//a")
+
+        has_next = false
+        orders = data.map do |order_data|
+          has_next ||= order_data.text.strip == "Next"
+          next if order_data.xpath("div").empty?
+          # "/admin/bonitacafe/orders/b432d1b7-0d93-4274-8985-eca3f0fc9b54"
+          url = order_data.attribute("href").value
+          # 16. May 2023
+          date = order_data.xpath("div")[0].xpath("div")[0].xpath("div")[0].text
+          time = order_data.xpath("div")[0].xpath("div")[0].xpath("div")[1].text
+          description1 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[0].text.strip
+          description2 = order_data.xpath("div")[0].xpath("div")[1].xpath("div")[1].text.strip
+          price = order_data.xpath("div")[0].xpath("div")[2].xpath("div")[0].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
+          { 
+            date: date,
+            time: time,
+            timestamp: DateTime.parse("#{date} #{time}"),
+            description1: description1,
+            description2: description2,
+            price: price
+          }
+        end.reject{|o| o.nil?}
+        # puts orders.to_json
+        result += orders
+        break unless has_next
+        page += 1
       end
+      result.flatten
     end
 
-    def used_codes(slug)
-      uri = "/admin/#{slug}/used_codes"
+    def used_codes(slug, page = 1)
+      result = []
+      loop do
+        # puts "Loading page #{page}"
+        uri = "/admin/#{slug}/used_codes?page=#{page}"
 
-      response = self.class.get(uri, headers: {
-        'Connection' => 'keep-alive',
-        'Accept' => '*/*',
-        'Accept-Language' => 'en-US,en;q=0.5',
-        'Cookie' => to_cookie_string(uri),
-        'User-Agent' => ua
-      })
-      parse_cookie(response)
+        response = self.class.get(uri, headers: {
+          'Connection' => 'keep-alive',
+          'Accept' => '*/*',
+          'Accept-Language' => 'en-US,en;q=0.5',
+          'Cookie' => to_cookie_string(uri),
+          'User-Agent' => ua
+        })
+        parse_cookie(response)
 
-      doc = Oga.parse_html(response.body)
+        doc = Oga.parse_html(response.body)
 
-      # skip header
-      data =  doc.xpath("//main/div/div/div/div | //main/div/div/div/a")
+        #puts response.body
 
-      # skip non data lines
-      data = data.select { |i| i.xpath("div").count > 0 }
+        # skip header
+        data =  doc.xpath("//main/div/div/div/div | //main/div/div/div/a")
 
-      data.map do |code_data|
-        # data[0].xpath("div").count
-        # "/admin/bonitacafe/orders/b432d1b7-0d93-4274-8985-eca3f0fc9b54"
-        url = code_data.name == "a" ? code_data.attribute("href").value : nil
-        # 16. May 2023
-        date = code_data.xpath("div")[0].xpath("div")[0].text
-        time = code_data.xpath("div")[0].xpath("div")[1].text
-        # returns "Gavekort Bonita Cafe / De La Casa 300kr" 
-        description1 = code_data.xpath("div")[1].xpath("div")[0].text.strip
-        # returns "oppvakt-flyndre-134a Y7KJ" 
-        description2 = code_data.xpath("div")[1].xpath("div")[1].text.strip.gsub("\n", "").gsub(/ +/, " ")
-        price = code_data.xpath("div")[2].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
-        { 
-          date: date,
-          time: time,
-          timestamp: DateTime.parse("#{date} #{time}"),
-          description1: description1,
-          description2: description2,
-          price: price
-        }
+        # skip non data lines
+        data = data.select { |i| i.xpath("div").count > 0 }
+
+        has_next = false
+        codes = data.map do |code_data|
+          has_next ||= code_data.text.strip == "Next"
+          next if code_data.xpath("div").empty?
+
+          #puts code_data.to_s
+          # data[0].xpath("div").count
+          # "/admin/bonitacafe/orders/b432d1b7-0d93-4274-8985-eca3f0fc9b54"
+          url = code_data.name == "a" ? code_data.attribute("href").value : nil
+          # 16. May 2023
+          date = code_data.xpath("div")[0].xpath("div")[0].text
+          time = code_data.xpath("div")[0].xpath("div")[1].text
+          # returns "Gavekort Bonita Cafe / De La Casa 300kr" 
+          description1 = code_data.xpath("div")[1].xpath("div")[0].text.strip
+          # returns "oppvakt-flyndre-134a Y7KJ" 
+          description2 = code_data.xpath("div")[1].xpath("div")[1].text.strip.gsub("\n", "").gsub(/ +/, " ")
+          price = code_data.xpath("div")[2].text.strip.gsub(/NOK[[:space:]]/, "").no_to_en_f
+          { 
+            date: date,
+            time: time,
+            timestamp: DateTime.parse("#{date} #{time}"),
+            description1: description1,
+            description2: description2,
+            price: price
+          }
+        end.reject{|o| o.nil?}
+        # puts codes.to_json
+        result += codes
+        break unless has_next
+        page += 1
       end
-      #response.body.
+      result.flatten
     end
 
     def to_cookie_string(uri)
