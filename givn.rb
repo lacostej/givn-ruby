@@ -1,5 +1,6 @@
 require_relative 'lib/givn/website'
 require 'colorize'
+require 'sentry-ruby'
 
 def dump_orders_codes(outlet, from, to)
   venue_slug = 
@@ -146,4 +147,22 @@ def process
   end
 end
 
-process
+sentry_dsn=ENV['SENTRY_DSN']
+if sentry_dsn
+  require 'sentry-ruby'
+
+  Sentry.init do |config|
+    config.dsn = sentry_dsn
+
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/ruby/data-management/data-collected/ for more info
+    config.send_default_pii = true
+  end
+end
+
+begin
+  process
+rescue => e
+  Sentry.capture_exception(e) if sentry_dsn
+  raise e
+end

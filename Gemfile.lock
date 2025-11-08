@@ -3,6 +3,7 @@ GEM
   specs:
     ansi (1.5.0)
     ast (2.4.2)
+    bigdecimal (3.3.1)
     colorize (0.8.1)
     concurrent-ruby (1.1.9)
     domain_name (0.5.20190701)
@@ -22,6 +23,9 @@ GEM
     ruby-ll (2.1.2)
       ansi
       ast
+    sentry-ruby (6.1.0)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     tzinfo-data (1.2021.2)
@@ -38,6 +42,7 @@ DEPENDENCIES
   http-cookie
   httparty
   oga
+  sentry-ruby
   tzinfo
   tzinfo-data
 
