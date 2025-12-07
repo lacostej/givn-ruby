@@ -3,28 +3,28 @@ require 'colorize'
 require 'sentry-ruby'
 
 def dump_orders_codes(outlet, from, to)
-  venue_slug = 
-JSON.parse(File.read(".env.#{outlet}.json"))['slug']
+  venue_slug = JSON.parse(File.read(".env.#{outlet}.json"))['slug']
   orders = website_client.orders(venue_slug).select{|order| order[:timestamp] >= from and order[:timestamp] < to}
-  codes = website_client.used_codes(venue_slug).select{|code| code[:timestamp] >= from and code[:timestamp] < to}
+  used_codes = website_client.used_codes(venue_slug).select{|code| code[:timestamp] >= from and code[:timestamp] < to}
 
   puts "ORDERS from #{from} to #{to}"
   orders.each do |order|
     puts "#{order[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{order[:price]}\n\t#{order[:description1]}\n\t#{order[:description2]}"
   end
-  total_transactions_sum = orders.map{|i| i[:price]}.sum
-  puts "TOTAL:\t #{total_transactions_sum} kr"
+  total_gift_card_sum = orders.map{|i| i[:price]}.sum
+  puts "TOTAL:\t #{total_gift_card_sum} kr"
   puts "CODES from #{from} to #{to}"
-  codes.each do |code|
+  used_codes.each do |code|
     puts "#{code[:timestamp].strftime("%Y-%m-%d %H:%M")}\t#{code[:price]}\n\t#{code[:description1]}\n\t#{code[:description2]}"
   end
-  puts "TOTAL:\t #{codes.map{|i| i[:price]}.sum.to_s.green}"
+  total_transactions_sum = used_codes.map{|i| i[:price]}.sum
+  puts "TOTAL:\t #{total_transactions_sum.to_s.green} kr"
 
   update_closing_data_file do |odata|
     # puts "Updating #{data.to_json} with #{data.to_json}"
     d = {
       'full_total': total_transactions_sum,
-      'transactions': orders.count
+      'transactions': used_codes.count
     }
     odata['givn'] = d
    end
