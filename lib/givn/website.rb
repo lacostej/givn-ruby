@@ -38,12 +38,16 @@ module Givn
 
       response = self.class.post(uri, headers: {
         'Connection' => 'keep-alive',
-        'Accept' => '*/*',
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language' => 'en-US,en;q=0.5',
+        'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity',
         'Cookie' => to_cookie_string(uri),
-        #'Content-Type' => 'application/x-www-form-urlencoded',
+        'Content-Type' => 'application/x-www-form-urlencoded',
         'User-Agent' => ua
       }, body: URI.encode_www_form(data))
+
+      raise "status #{response.code}" if response.code >= 400
+
       parse_cookie(response)
 
       # parse admin page
@@ -182,7 +186,7 @@ module Givn
     end
 
     def cookies_filename
-      path = File.expand_path("~/.lightspeed/lightspeed.yaml")
+      path = File.expand_path("~/.givn/givn.yaml")
       require 'fileutils'
       FileUtils.mkdir_p(File.dirname(path))
       path
